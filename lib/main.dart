@@ -217,12 +217,20 @@ class _CoursesPageState extends State<CoursesPage> {
   }
 }
 
-class CourseDetailPage extends StatelessWidget {
+class CourseDetailPage extends StatefulWidget {
   final Map<String, dynamic> course;
   const CourseDetailPage({super.key, required this.course});
 
   @override
+  State<CourseDetailPage> createState() => _CourseDetailPageState();
+}
+
+class _CourseDetailPageState extends State<CourseDetailPage> {
+  bool showDetail = false; // local state: hanya dipakai halaman ini
+
+  @override
   Widget build(BuildContext context) {
+    final course = widget.course;
     return Scaffold(
       appBar: AppBar(title: Text(course['title'] as String)),
       body: Padding(
@@ -235,9 +243,18 @@ class CourseDetailPage extends StatelessWidget {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Text('Kode: ${course['code']}'),
-            Text('${course['credits']} SKS'),
-            Text('Status: ${course['status']}'),
+            TextButton.icon(
+              icon: Icon(showDetail ? Icons.expand_less : Icons.expand_more),
+              label: Text(showDetail ? 'Sembunyikan detail' : 'Tampilkan detail'),
+              onPressed: () {
+                setState(() => showDetail = !showDetail);
+              },
+            ),
+            if (showDetail) ...[
+              Text('Kode: ${course['code']}'),
+              Text('${course['credits']} SKS'),
+              Text('Status: ${course['status']}'),
+            ],
             const SizedBox(height: 24),
             Text('$studentId - $studentName'),
             const SizedBox(height: 16),
