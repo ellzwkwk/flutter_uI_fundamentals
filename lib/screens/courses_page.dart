@@ -71,7 +71,6 @@ class CoursesPage extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
                   );
                   if (result == true && context.mounted) {
-                    context.read<CourseState>().toggleFavorite(course.code);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('${course.title} ditandai favorite')),
                     );

@@ -7,7 +7,7 @@ class HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Course Explorer')),
+      appBar: AppBar(title: const Text('Course Explorer v2')),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
