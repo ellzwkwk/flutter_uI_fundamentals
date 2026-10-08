@@ -165,8 +165,6 @@ class _CoursesPageState extends State<CoursesPage> {
   }
 }
 
-// Widget perantara: TIDAK memakai courses/favoriteCodes/callback untuk dirinya
-// sendiri, hanya meneruskan ke CourseListBody -> contoh prop drilling.
 class CourseListSection extends StatelessWidget {
   final List<Map<String, dynamic>> courses;
   final Set<String> favoriteCodes;
