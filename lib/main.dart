@@ -1,3 +1,4 @@
+import 'providers/course_provider.dart';
 import 'repositories/course_repository.dart';
 import 'services/course_service.dart';
 import 'dart:convert';
@@ -16,9 +17,14 @@ Future<Map<String, dynamic>> loadStudentData() async {
 }
 
 void main() {
+  final repository = CourseRepository(CourseService());
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CourseState(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CourseState()),
+        ChangeNotifierProvider(create: (_) => CourseProvider(repository)..loadCourses()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -127,17 +133,10 @@ class HomeTab extends StatelessWidget {
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
 
-  static final List<Course> courses = [
-    {'code': 'MOB01', 'title': 'Git & GitHub', 'credits': 2, 'status': 'done'},
-    {'code': 'MOB02', 'title': 'Dart Fundamentals', 'credits': 2, 'status': 'done'},
-    {'code': 'MOB03', 'title': 'Flutter UI Fundamentals', 'credits': 3, 'status': 'active'},
-    {'code': 'MOB04', 'title': 'Navigation', 'credits': 2, 'status': 'planned'},
-    {'code': 'MOB05', 'title': 'State Management', 'credits': 3, 'status': 'planned'},
-  ].map((json) => Course.fromJson(json)).toList();
-
   @override
   Widget build(BuildContext context) {
     final favoriteCount = context.watch<CourseState>().favorites.length;
+    final courseProvider = context.watch<CourseProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -167,43 +166,60 @@ class CoursesPage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: courses.length,
-        itemBuilder: (context, index) {
-          final Course course = courses[index];
-
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: ListTile(
-              title: Text(course.title),
-              subtitle: Text('${course.code} • ${course.credits} SKS'),
-              onTap: () async {
-                final result = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
-                );
-                if (result == true && context.mounted) {
-                  context.read<CourseState>().toggleFavorite(course.code);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${course.title} ditandai favorite')),
-                  );
-                }
-              },
-              trailing: Consumer<CourseState>(
-                builder: (context, state, child) {
-                  final bool isFavorite = state.isFavorite(course.code);
-                  return IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : null,
-                    ),
-                    onPressed: () {
-                      context.read<CourseState>().toggleFavorite(course.code);
-                    },
-                  );
-                },
+      body: Builder(
+        builder: (context) {
+          if (courseProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (courseProvider.error != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Gagal memuat data: ${courseProvider.error}'),
               ),
-            ),
+            );
+          }
+
+          final courses = courseProvider.courses;
+          return ListView.builder(
+            itemCount: courses.length,
+            itemBuilder: (context, index) {
+              final Course course = courses[index];
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: ListTile(
+                  title: Text(course.title),
+                  subtitle: Text('${course.code} • ${course.credits} SKS'),
+                  onTap: () async {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
+                    );
+                    if (result == true && context.mounted) {
+                      context.read<CourseState>().toggleFavorite(course.code);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${course.title} ditandai favorite')),
+                      );
+                    }
+                  },
+                  trailing: Consumer<CourseState>(
+                    builder: (context, state, child) {
+                      final bool isFavorite = state.isFavorite(course.code);
+                      return IconButton(
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorite ? Colors.red : null,
+                        ),
+                        onPressed: () {
+                          context.read<CourseState>().toggleFavorite(course.code);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
