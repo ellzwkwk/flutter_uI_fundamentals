@@ -1,3 +1,4 @@
+import 'repositories/course_repository.dart';
 import 'services/course_service.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -14,7 +15,13 @@ Future<Map<String, dynamic>> loadStudentData() async {
   return jsonDecode(jsonString) as Map<String, dynamic>;
 }
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final repository = CourseRepository(CourseService());
+  final testCourses = await repository.getCourses();
+  debugPrint('Repository berhasil load ${testCourses.length} courses');
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => CourseState(),
