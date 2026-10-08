@@ -135,7 +135,23 @@ class _CoursesPageState extends State<CoursesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Courses - $studentId $studentName')),
+      appBar: AppBar(
+        title: Text('Courses - $studentId $studentName'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Center(
+              child: Row(
+                children: [
+                  const Icon(Icons.favorite, size: 18),
+                  const SizedBox(width: 4),
+                  Text('${favoriteCodes.length}'),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
       body: CourseListSection(
         courses: courses,
         favoriteCodes: favoriteCodes,
@@ -165,6 +181,8 @@ class _CoursesPageState extends State<CoursesPage> {
   }
 }
 
+// Widget perantara: TIDAK memakai courses/favoriteCodes/callback untuk dirinya
+// sendiri, hanya meneruskan ke CourseListBody -> contoh prop drilling (Tahap 2).
 class CourseListSection extends StatelessWidget {
   final List<Map<String, dynamic>> courses;
   final Set<String> favoriteCodes;
