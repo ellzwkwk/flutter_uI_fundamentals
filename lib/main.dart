@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 import 'course_state.dart';
+import 'models/course.dart';
 
 const String studentName = 'Gabriel Pranata Sembiring';
 const String studentId = '2415051086';
@@ -124,17 +125,16 @@ class HomeTab extends StatelessWidget {
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
 
-  static const List<Map<String, dynamic>> courses = [
+  static final List<Course> courses = [
     {'code': 'MOB01', 'title': 'Git & GitHub', 'credits': 2, 'status': 'done'},
     {'code': 'MOB02', 'title': 'Dart Fundamentals', 'credits': 2, 'status': 'done'},
     {'code': 'MOB03', 'title': 'Flutter UI Fundamentals', 'credits': 3, 'status': 'active'},
     {'code': 'MOB04', 'title': 'Navigation', 'credits': 2, 'status': 'planned'},
     {'code': 'MOB05', 'title': 'State Management', 'credits': 3, 'status': 'planned'},
-  ];
+  ].map((json) => Course.fromJson(json)).toList();
 
   @override
   Widget build(BuildContext context) {
-    // watch(): mendengarkan perubahan, widget ini rebuild setiap favorites berubah
     final favoriteCount = context.watch<CourseState>().favorites.length;
 
     return Scaffold(
@@ -168,39 +168,35 @@ class CoursesPage extends StatelessWidget {
       body: ListView.builder(
         itemCount: courses.length,
         itemBuilder: (context, index) {
-          final course = courses[index];
-          final String code = course['code'] as String;
+          final Course course = courses[index];
 
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: ListTile(
-              title: Text(course['title'] as String),
-              subtitle: Text('${course['code']} • ${course['credits']} SKS'),
+              title: Text(course.title),
+              subtitle: Text('${course.code} • ${course.credits} SKS'),
               onTap: () async {
                 final result = await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
                 );
                 if (result == true && context.mounted) {
-                  // read(): ambil object tanpa listen, dipakai untuk aksi
-                  context.read<CourseState>().toggleFavorite(code);
+                  context.read<CourseState>().toggleFavorite(course.code);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${course['title']} ditandai favorite')),
+                    SnackBar(content: Text('${course.title} ditandai favorite')),
                   );
                 }
               },
               trailing: Consumer<CourseState>(
-                // Consumer: membatasi rebuild hanya pada IconButton ini,
-                // bukan seluruh ListTile atau seluruh CoursesPage.
                 builder: (context, state, child) {
-                  final bool isFavorite = state.isFavorite(code);
+                  final bool isFavorite = state.isFavorite(course.code);
                   return IconButton(
                     icon: Icon(
                       isFavorite ? Icons.favorite : Icons.favorite_border,
                       color: isFavorite ? Colors.red : null,
                     ),
                     onPressed: () {
-                      context.read<CourseState>().toggleFavorite(code);
+                      context.read<CourseState>().toggleFavorite(course.code);
                     },
                   );
                 },
@@ -214,7 +210,7 @@ class CoursesPage extends StatelessWidget {
 }
 
 class CourseDetailPage extends StatefulWidget {
-  final Map<String, dynamic> course;
+  final Course course;
   const CourseDetailPage({super.key, required this.course});
 
   @override
@@ -222,20 +218,20 @@ class CourseDetailPage extends StatefulWidget {
 }
 
 class _CourseDetailPageState extends State<CourseDetailPage> {
-  bool showDetail = false; // local state: hanya dipakai halaman ini
+  bool showDetail = false;
 
   @override
   Widget build(BuildContext context) {
     final course = widget.course;
     return Scaffold(
-      appBar: AppBar(title: Text(course['title'] as String)),
+      appBar: AppBar(title: Text(course.title)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              course['title'] as String,
+              course.title,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -247,9 +243,9 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               },
             ),
             if (showDetail) ...[
-              Text('Kode: ${course['code']}'),
-              Text('${course['credits']} SKS'),
-              Text('Status: ${course['status']}'),
+              Text('Kode: ${course.code}'),
+              Text('${course.credits} SKS'),
+              Text('Status: ${course.status}'),
             ],
             const SizedBox(height: 24),
             Text('$studentId - $studentName'),
@@ -258,7 +254,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               icon: const Icon(Icons.favorite),
               label: const Text('Tandai Favorite'),
               onPressed: () {
-                context.read<CourseState>().toggleFavorite(course['code'] as String);
+                context.read<CourseState>().toggleFavorite(course.code);
                 Navigator.pop(context, true);
               },
             ),
