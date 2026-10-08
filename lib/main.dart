@@ -121,14 +121,9 @@ class HomeTab extends StatelessWidget {
   }
 }
 
-class CoursesPage extends StatefulWidget {
+class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
 
-  @override
-  State<CoursesPage> createState() => _CoursesPageState();
-}
-
-class _CoursesPageState extends State<CoursesPage> {
   static const List<Map<String, dynamic>> courses = [
     {'code': 'MOB01', 'title': 'Git & GitHub', 'credits': 2, 'status': 'done'},
     {'code': 'MOB02', 'title': 'Dart Fundamentals', 'credits': 2, 'status': 'done'},
@@ -137,10 +132,11 @@ class _CoursesPageState extends State<CoursesPage> {
     {'code': 'MOB05', 'title': 'State Management', 'credits': 3, 'status': 'planned'},
   ];
 
-  final Set<String> favoriteCodes = {};
-
   @override
   Widget build(BuildContext context) {
+    // watch(): mendengarkan perubahan, widget ini rebuild setiap favorites berubah
+    final favoriteCount = context.watch<CourseState>().favorites.length;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Courses - $studentId $studentName'),
@@ -162,108 +158,57 @@ class _CoursesPageState extends State<CoursesPage> {
                 children: [
                   const Icon(Icons.favorite, size: 18),
                   const SizedBox(width: 4),
-                  Text('${favoriteCodes.length}'),
+                  Text('$favoriteCount'),
                 ],
               ),
             ),
           ),
         ],
       ),
-      body: CourseListSection(
-        courses: courses,
-        favoriteCodes: favoriteCodes,
-        onToggleFavorite: (code) {
-          setState(() {
-            if (favoriteCodes.contains(code)) {
-              favoriteCodes.remove(code);
-            } else {
-              favoriteCodes.add(code);
-            }
-          });
-        },
-        onOpenDetail: (course) async {
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
+      body: ListView.builder(
+        itemCount: courses.length,
+        itemBuilder: (context, index) {
+          final course = courses[index];
+          final String code = course['code'] as String;
+
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: ListTile(
+              title: Text(course['title'] as String),
+              subtitle: Text('${course['code']} • ${course['credits']} SKS'),
+              onTap: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
+                );
+                if (result == true && context.mounted) {
+                  // read(): ambil object tanpa listen, dipakai untuk aksi
+                  context.read<CourseState>().toggleFavorite(code);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${course['title']} ditandai favorite')),
+                  );
+                }
+              },
+              trailing: Consumer<CourseState>(
+                // Consumer: membatasi rebuild hanya pada IconButton ini,
+                // bukan seluruh ListTile atau seluruh CoursesPage.
+                builder: (context, state, child) {
+                  final bool isFavorite = state.isFavorite(code);
+                  return IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : null,
+                    ),
+                    onPressed: () {
+                      context.read<CourseState>().toggleFavorite(code);
+                    },
+                  );
+                },
+              ),
+            ),
           );
-          if (result == true && context.mounted) {
-            setState(() => favoriteCodes.add(course['code'] as String));
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${course['title']} ditandai favorite')),
-            );
-          }
         },
       ),
-    );
-  }
-}
-
-// Widget perantara: TIDAK memakai courses/favoriteCodes/callback untuk dirinya
-// sendiri, hanya meneruskan ke CourseListBody -> contoh prop drilling (Tahap 2).
-class CourseListSection extends StatelessWidget {
-  final List<Map<String, dynamic>> courses;
-  final Set<String> favoriteCodes;
-  final void Function(String code) onToggleFavorite;
-  final void Function(Map<String, dynamic> course) onOpenDetail;
-
-  const CourseListSection({
-    super.key,
-    required this.courses,
-    required this.favoriteCodes,
-    required this.onToggleFavorite,
-    required this.onOpenDetail,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CourseListBody(
-      courses: courses,
-      favoriteCodes: favoriteCodes,
-      onToggleFavorite: onToggleFavorite,
-      onOpenDetail: onOpenDetail,
-    );
-  }
-}
-
-class CourseListBody extends StatelessWidget {
-  final List<Map<String, dynamic>> courses;
-  final Set<String> favoriteCodes;
-  final void Function(String code) onToggleFavorite;
-  final void Function(Map<String, dynamic> course) onOpenDetail;
-
-  const CourseListBody({
-    super.key,
-    required this.courses,
-    required this.favoriteCodes,
-    required this.onToggleFavorite,
-    required this.onOpenDetail,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: courses.length,
-      itemBuilder: (context, index) {
-        final course = courses[index];
-        final String code = course['code'] as String;
-        final bool isFavorite = favoriteCodes.contains(code);
-
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: ListTile(
-            title: Text(course['title'] as String),
-            subtitle: Text('${course['code']} • ${course['credits']} SKS'),
-            onTap: () => onOpenDetail(course),
-            trailing: IconButton(
-              icon: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : null,
-              ),
-              onPressed: () => onToggleFavorite(code),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -313,6 +258,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               icon: const Icon(Icons.favorite),
               label: const Text('Tandai Favorite'),
               onPressed: () {
+                context.read<CourseState>().toggleFavorite(course['code'] as String);
                 Navigator.pop(context, true);
               },
             ),
@@ -332,6 +278,56 @@ int columnsFor(double width) {
   if (width < 600) return 1;
   if (width < 840) return 2;
   return 3;
+}
+
+class ValueNotifierDemoPage extends StatelessWidget {
+  ValueNotifierDemoPage({super.key});
+
+  final ValueNotifier<int> favoriteCount = ValueNotifier<int>(0);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('ValueNotifier Demo')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('$studentId - $studentName'),
+            const SizedBox(height: 16),
+            const Text('Jumlah favorite (demo):'),
+            const SizedBox(height: 8),
+            ValueListenableBuilder<int>(
+              valueListenable: favoriteCount,
+              builder: (context, value, child) {
+                return Text(
+                  '$value',
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton(
+                  onPressed: () => favoriteCount.value++,
+                  child: const Text('+ Favorite'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    if (favoriteCount.value > 0) favoriteCount.value--;
+                  },
+                  child: const Text('- Favorite'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class ProfileTab extends StatefulWidget {
@@ -466,55 +462,6 @@ class _ProfileTabState extends State<ProfileTab> {
               const SizedBox(height: 16),
               Text('Feedback tersimpan: $submittedComment'),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-class ValueNotifierDemoPage extends StatelessWidget {
-  ValueNotifierDemoPage({super.key});
-
-  final ValueNotifier<int> favoriteCount = ValueNotifier<int>(0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('ValueNotifier Demo')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('$studentId - $studentName'),
-            const SizedBox(height: 16),
-            const Text('Jumlah favorite (demo):'),
-            const SizedBox(height: 8),
-            ValueListenableBuilder<int>(
-              valueListenable: favoriteCount,
-              builder: (context, value, child) {
-                return Text(
-                  '$value',
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton(
-                  onPressed: () => favoriteCount.value++,
-                  child: const Text('+ Favorite'),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    if (favoriteCount.value > 0) favoriteCount.value--;
-                  },
-                  child: const Text('- Favorite'),
-                ),
-              ],
-            ),
           ],
         ),
       ),
