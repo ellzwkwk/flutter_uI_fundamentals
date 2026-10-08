@@ -132,87 +132,105 @@ class _CoursesPageState extends State<CoursesPage> {
 
   final Set<String> favoriteCodes = {};
 
-  Widget buildCourseListTile(BuildContext context, Map<String, dynamic> course) {
-    final String code = course['code'] as String;
-    final bool isFavorite = favoriteCodes.contains(code);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: InkWell(
-        onTap: () async {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Courses - $studentId $studentName')),
+      body: CourseListSection(
+        courses: courses,
+        favoriteCodes: favoriteCodes,
+        onToggleFavorite: (code) {
+          setState(() {
+            if (favoriteCodes.contains(code)) {
+              favoriteCodes.remove(code);
+            } else {
+              favoriteCodes.add(code);
+            }
+          });
+        },
+        onOpenDetail: (course) async {
           final result = await Navigator.push<bool>(
             context,
             MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
           );
           if (result == true && context.mounted) {
-            setState(() => favoriteCodes.add(code));
+            setState(() => favoriteCodes.add(course['code'] as String));
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('${course['title']} ditandai favorite')),
             );
           }
         },
-        onLongPress: () {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: Text(course['title'] as String),
-              content: Text(
-                'Kode: ${course['code']}\n${course['credits']} SKS\nStatus: ${course['status']}',
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup')),
-              ],
-            ),
-          );
-        },
-        child: ListTile(
-          title: Text(course['title'] as String),
-          subtitle: Text('${course['code']} • ${course['credits']} SKS'),
-          trailing: IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : null,
-            ),
-            onPressed: () {
-              setState(() {
-                if (isFavorite) {
-                  favoriteCodes.remove(code);
-                } else {
-                  favoriteCodes.add(code);
-                }
-              });
-            },
-          ),
-        ),
       ),
     );
   }
+}
+
+// Widget perantara: TIDAK memakai courses/favoriteCodes/callback untuk dirinya
+// sendiri, hanya meneruskan ke CourseListBody -> contoh prop drilling.
+class CourseListSection extends StatelessWidget {
+  final List<Map<String, dynamic>> courses;
+  final Set<String> favoriteCodes;
+  final void Function(String code) onToggleFavorite;
+  final void Function(Map<String, dynamic> course) onOpenDetail;
+
+  const CourseListSection({
+    super.key,
+    required this.courses,
+    required this.favoriteCodes,
+    required this.onToggleFavorite,
+    required this.onOpenDetail,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Courses - $studentId $studentName')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return ListView.builder(
-              itemCount: courses.length,
-              itemBuilder: (context, index) => buildCourseListTile(context, courses[index]),
-            );
-          }
-          return GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columnsFor(constraints.maxWidth),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.5,
+    return CourseListBody(
+      courses: courses,
+      favoriteCodes: favoriteCodes,
+      onToggleFavorite: onToggleFavorite,
+      onOpenDetail: onOpenDetail,
+    );
+  }
+}
+
+class CourseListBody extends StatelessWidget {
+  final List<Map<String, dynamic>> courses;
+  final Set<String> favoriteCodes;
+  final void Function(String code) onToggleFavorite;
+  final void Function(Map<String, dynamic> course) onOpenDetail;
+
+  const CourseListBody({
+    super.key,
+    required this.courses,
+    required this.favoriteCodes,
+    required this.onToggleFavorite,
+    required this.onOpenDetail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: courses.length,
+      itemBuilder: (context, index) {
+        final course = courses[index];
+        final String code = course['code'] as String;
+        final bool isFavorite = favoriteCodes.contains(code);
+
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: ListTile(
+            title: Text(course['title'] as String),
+            subtitle: Text('${course['code']} • ${course['credits']} SKS'),
+            onTap: () => onOpenDetail(course),
+            trailing: IconButton(
+              icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: isFavorite ? Colors.red : null,
+              ),
+              onPressed: () => onToggleFavorite(code),
             ),
-            itemCount: courses.length,
-            itemBuilder: (context, index) => buildCourseListTile(context, courses[index]),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
