@@ -15,13 +15,7 @@ Future<Map<String, dynamic>> loadStudentData() async {
   return jsonDecode(jsonString) as Map<String, dynamic>;
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  final repository = CourseRepository(CourseService());
-  final testCourses = await repository.getCourses();
-  debugPrint('Repository berhasil load ${testCourses.length} courses');
-
+void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => CourseState(),
