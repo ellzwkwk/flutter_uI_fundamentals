@@ -35,3 +35,19 @@ Contoh response:
       "credits": 2,
       "status": "done"
     }
+
+## Database (Supabase)
+
+Tabel `courses` didefinisikan di `supabase/schema.sql`.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| id | bigint identity | Primary key |
+| code | text | Unik, dipakai sebagai kunci favorites |
+| title | text | Judul course |
+| credits | int | Harus lebih dari 0 |
+| status | text | planned / active / done |
+| created_at | timestamptz | Otomatis |
+
+RLS aktif dengan policy permisif khusus praktikum lab.
+Policy ini bukan pola produksi.
