@@ -44,8 +44,6 @@ class CourseSupabaseService implements CourseDataSource {
           .eq('id', id)
           .select();
 
-      // Jika RLS menolak atau id tidak ada, Supabase tidak melempar error;
-      // hasilnya hanya daftar kosong. Kita ubah menjadi error yang jelas.
       if ((updated as List).isEmpty) {
         throw Exception(
           'Course tidak ditemukan atau perubahan ditolak oleh policy',
@@ -56,8 +54,24 @@ class CourseSupabaseService implements CourseDataSource {
     }
   }
 
-  // Sementara, agar kelas tetap dapat dikompilasi.
-  // Diimplementasikan pada Tahap 15.
   @override
-  Future<void> deleteCourse(int id) => throw UnimplementedError();
+  Future<void> deleteCourse(int id) async {
+    try {
+      final deleted = await supabase
+          .from('courses')
+          .delete()
+          .eq('id', id)
+          .select();
+
+      // Sama seperti UPDATE: jika RLS menolak atau id tidak ada, Supabase
+      // tidak melempar error, hanya menghapus nol baris.
+      if ((deleted as List).isEmpty) {
+        throw Exception(
+          'Course tidak ditemukan atau penghapusan ditolak oleh policy',
+        );
+      }
+    } on PostgrestException catch (e) {
+      throw Exception('Gagal menghapus course: ${e.message}');
+    }
+  }
 }
