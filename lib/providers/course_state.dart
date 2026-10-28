@@ -13,4 +13,10 @@ class CourseState extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  void removeFavorite(String code) {
+    if (favorites.remove(code)) {
+      notifyListeners();
+    }
+  }
 }

@@ -16,6 +16,55 @@ class CourseDetailPage extends StatefulWidget {
 
 class _CourseDetailPageState extends State<CourseDetailPage> {
   bool showDetail = false;
+  bool isDeleting = false;
+
+  Future<void> _confirmAndDelete(Course course) async {
+    if (isDeleting || course.id == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Hapus course?'),
+        content: Text('"${course.title}" (${course.code}) akan dihapus permanen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => isDeleting = true);
+
+    try {
+      await context.read<CourseProvider>().deleteCourse(course.id!);
+      if (!mounted) return;
+      // Bersihkan dari favorites agar tidak tersisa data yatim.
+      context.read<CourseState>().removeFavorite(course.code);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${course.title} berhasil dihapus')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isDeleting = false);
+      final message = e.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menghapus: $message')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +104,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
             ElevatedButton.icon(
               icon: const Icon(Icons.edit),
               label: const Text('Edit'),
-              onPressed: course.id == null
+              onPressed: (course.id == null || isDeleting)
                   ? null
                   : () {
                       Navigator.push(
@@ -68,16 +117,33 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
             ),
             const SizedBox(height: 8),
             ElevatedButton.icon(
+              icon: isDeleting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.delete),
+              label: Text(isDeleting ? 'Menghapus...' : 'Delete'),
+              style: ElevatedButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: (course.id == null || isDeleting)
+                  ? null
+                  : () => _confirmAndDelete(course),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
               icon: const Icon(Icons.favorite),
               label: const Text('Tandai Favorite'),
-              onPressed: () {
-                context.read<CourseState>().toggleFavorite(course.code);
-                Navigator.pop(context, true);
-              },
+              onPressed: isDeleting
+                  ? null
+                  : () {
+                      context.read<CourseState>().toggleFavorite(course.code);
+                      Navigator.pop(context, true);
+                    },
             ),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: isDeleting ? null : () => Navigator.pop(context),
               child: const Text('Kembali tanpa favorite'),
             ),
           ],

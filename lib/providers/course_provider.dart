@@ -35,4 +35,9 @@ class CourseProvider extends ChangeNotifier {
     await repository.updateCourse(id, course);
     await loadCourses();
   }
+
+  Future<void> deleteCourse(int id) async {
+    await repository.deleteCourse(id);
+    await loadCourses();
+  }
 }
