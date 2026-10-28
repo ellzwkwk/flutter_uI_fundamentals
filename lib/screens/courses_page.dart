@@ -6,7 +6,7 @@ import '../providers/course_provider.dart';
 import '../providers/course_state.dart';
 import '../widgets/course_tile.dart';
 import 'course_detail_page.dart';
-import 'value_notifier_demo_page.dart';
+import 'api_demo_page.dart';
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
@@ -21,12 +21,12 @@ class CoursesPage extends StatelessWidget {
         title: Text('Courses - $studentId $studentName'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.science_outlined),
-            tooltip: 'ValueNotifier Demo',
+            icon: const Icon(Icons.cloud_outlined),
+            tooltip: 'API Demo',
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => ValueNotifierDemoPage()),
+                MaterialPageRoute(builder: (context) => const ApiDemoPage()),
               );
             },
           ),
