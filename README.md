@@ -17,3 +17,21 @@ menggunakan Provider dan arsitektur berlapis.
 Screen/Widget → Provider → Repository → Service/Data Source
 
 UI tidak pernah memanggil `rootBundle`/`jsonDecode` secara langsung; semua akses data melewati Provider yang memanggil Repository yang memanggil Service.
+
+## REST Endpoint
+
+- **Base URL:** https://6ae18ec8be3bc8fead98ba30.mockapi.io/api/v1
+- **Endpoint:** /courses
+- **Method:** GET
+- **Status code:** 200 OK
+- **Field JSON:** id, code, title, credits, status
+
+Contoh response:
+
+    {
+      "id": "1",
+      "code": "MOB01",
+      "title": "Git & GitHub",
+      "credits": 2,
+      "status": "done"
+    }
