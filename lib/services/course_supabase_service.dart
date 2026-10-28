@@ -35,12 +35,29 @@ class CourseSupabaseService implements CourseDataSource {
     }
   }
 
-  // Sementara, agar kelas tetap dapat dikompilasi.
-  // Diimplementasikan pada Tahap 14 dan 15.
   @override
-  Future<void> updateCourse(int id, Course course) =>
-      throw UnimplementedError();
+  Future<void> updateCourse(int id, Course course) async {
+    try {
+      final updated = await supabase
+          .from('courses')
+          .update(course.toJson())
+          .eq('id', id)
+          .select();
 
+      // Jika RLS menolak atau id tidak ada, Supabase tidak melempar error;
+      // hasilnya hanya daftar kosong. Kita ubah menjadi error yang jelas.
+      if ((updated as List).isEmpty) {
+        throw Exception(
+          'Course tidak ditemukan atau perubahan ditolak oleh policy',
+        );
+      }
+    } on PostgrestException catch (e) {
+      throw Exception('Gagal memperbarui course: ${e.message}');
+    }
+  }
+
+  // Sementara, agar kelas tetap dapat dikompilasi.
+  // Diimplementasikan pada Tahap 15.
   @override
   Future<void> deleteCourse(int id) => throw UnimplementedError();
 }
