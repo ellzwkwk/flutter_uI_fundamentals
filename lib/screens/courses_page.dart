@@ -5,10 +5,51 @@ import '../models/course.dart';
 import '../providers/course_provider.dart';
 import '../providers/course_state.dart';
 import '../widgets/course_tile.dart';
+import '../widgets/error_view.dart';
 import 'course_detail_page.dart';
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
+
+  Widget _buildBody(BuildContext context, CourseProvider provider) {
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (provider.error != null) {
+      return ErrorView(
+        message: provider.error!,
+        onRetry: provider.loadCourses,
+      );
+    }
+
+    if (provider.courses.isEmpty) {
+      return const Center(child: Text('Data course belum tersedia'));
+    }
+
+    return ListView.builder(
+      itemCount: provider.courses.length,
+      itemBuilder: (context, index) {
+        final Course course = provider.courses[index];
+        return CourseTile(
+          course: course,
+          onOpenDetail: (course) async {
+            final result = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CourseDetailPage(course: course),
+              ),
+            );
+            if (result == true && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${course.title} ditandai favorite')),
+              );
+            }
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,43 +74,7 @@ class CoursesPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Builder(
-        builder: (context) {
-          if (courseProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (courseProvider.error != null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Gagal memuat data: ${courseProvider.error}'),
-              ),
-            );
-          }
-
-          final courses = courseProvider.courses;
-          return ListView.builder(
-            itemCount: courses.length,
-            itemBuilder: (context, index) {
-              final Course course = courses[index];
-              return CourseTile(
-                course: course,
-                onOpenDetail: (course) async {
-                  final result = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(builder: (context) => CourseDetailPage(course: course)),
-                  );
-                  if (result == true && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${course.title} ditandai favorite')),
-                    );
-                  }
-                },
-              );
-            },
-          );
-        },
-      ),
+      body: _buildBody(context, courseProvider),
     );
   }
 }
