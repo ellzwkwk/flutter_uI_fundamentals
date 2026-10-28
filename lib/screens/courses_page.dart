@@ -6,7 +6,6 @@ import '../providers/course_provider.dart';
 import '../providers/course_state.dart';
 import '../widgets/course_tile.dart';
 import 'course_detail_page.dart';
-import 'api_demo_page.dart';
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
@@ -20,16 +19,6 @@ class CoursesPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Courses - $studentId $studentName'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.cloud_outlined),
-            tooltip: 'API Demo',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ApiDemoPage()),
-              );
-            },
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Center(
