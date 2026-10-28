@@ -4,6 +4,7 @@ import 'providers/course_state.dart';
 import 'providers/course_provider.dart';
 import 'repositories/course_repository.dart';
 import 'services/course_api_service.dart';
+import 'services/course_data_source.dart';
 import 'screens/root_shell.dart';
 
 const String studentName = 'Gabriel Pranata Sembiring';
@@ -14,7 +15,9 @@ const String apiBaseUrl =
     'https://6ae18ec8be3bc8fead98ba30.mockapi.io/api/v1';
 
 void main() {
-  final repository = CourseRepository(CourseApiService(apiBaseUrl));
+  // Satu baris inilah yang berubah ketika sumber data diganti.
+  final CourseDataSource dataSource = CourseApiService(apiBaseUrl);
+  final repository = CourseRepository(dataSource);
 
   runApp(
     MultiProvider(
