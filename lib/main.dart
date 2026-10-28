@@ -5,14 +5,14 @@ import 'config/supabase_config.dart';
 import 'providers/course_state.dart';
 import 'providers/course_provider.dart';
 import 'repositories/course_repository.dart';
-import 'services/course_api_service.dart';
 import 'services/course_data_source.dart';
+import 'services/course_supabase_service.dart';
 import 'screens/root_shell.dart';
 
 const String studentName = 'Gabriel Pranata Sembiring';
 const String studentId = '2415051086';
 
-// Base URL tanpa /courses (dipakai CourseApiService).
+// Base URL REST (MockAPI), tanpa /courses. Dipakai CourseApiService.
 const String apiBaseUrl =
     'https://6ae18ec8be3bc8fead98ba30.mockapi.io/api/v1';
 
@@ -23,10 +23,11 @@ Future<void> main() async {
     url: supabaseUrl,
     publishableKey: supabaseAnonKey,
   );
-  debugPrint('$studentId - $studentName');
-  debugPrint('Supabase berhasil diinisialisasi: $supabaseUrl');
 
-  final CourseDataSource dataSource = CourseApiService(apiBaseUrl);
+  // Data source aktif: Supabase.
+  // Untuk kembali ke REST: CourseApiService(apiBaseUrl)
+  // (tambahkan import 'services/course_api_service.dart').
+  final CourseDataSource dataSource = CourseSupabaseService();
   final repository = CourseRepository(dataSource);
 
   runApp(
