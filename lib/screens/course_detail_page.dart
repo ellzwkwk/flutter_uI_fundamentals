@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart' show studentName, studentId;
 import '../models/course.dart';
+import '../providers/course_provider.dart';
 import '../providers/course_state.dart';
+import 'course_form_page.dart';
 
 class CourseDetailPage extends StatefulWidget {
   final Course course;
@@ -17,10 +19,15 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final course = widget.course;
+    // Ambil versi terbaru dari provider (setelah edit/refresh).
+    final course = context.watch<CourseProvider>().courses.firstWhere(
+          (c) => c.code == widget.course.code,
+          orElse: () => widget.course,
+        );
+
     return Scaffold(
       appBar: AppBar(title: Text(course.title)),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,6 +52,21 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
             const SizedBox(height: 24),
             Text('$studentId - $studentName'),
             const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.edit),
+              label: const Text('Edit'),
+              onPressed: course.id == null
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CourseFormPage(course: course),
+                        ),
+                      );
+                    },
+            ),
+            const SizedBox(height: 8),
             ElevatedButton.icon(
               icon: const Icon(Icons.favorite),
               label: const Text('Tandai Favorite'),

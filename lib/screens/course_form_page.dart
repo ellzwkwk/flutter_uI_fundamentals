@@ -5,7 +5,9 @@ import '../models/course.dart';
 import '../providers/course_provider.dart';
 
 class CourseFormPage extends StatefulWidget {
-  const CourseFormPage({super.key});
+  final Course? course; // null = tambah baru, ada isi = edit
+
+  const CourseFormPage({super.key, this.course});
 
   @override
   State<CourseFormPage> createState() => _CourseFormPageState();
@@ -15,12 +17,24 @@ class _CourseFormPageState extends State<CourseFormPage> {
   static const List<String> statuses = ['planned', 'active', 'done'];
 
   final formKey = GlobalKey<FormState>();
-  final codeController = TextEditingController();
-  final titleController = TextEditingController();
-  final creditsController = TextEditingController();
+  late final TextEditingController codeController;
+  late final TextEditingController titleController;
+  late final TextEditingController creditsController;
 
-  String status = 'planned';
+  late String status;
   bool isSaving = false;
+
+  bool get isEdit => widget.course != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = widget.course;
+    codeController = TextEditingController(text: c?.code ?? '');
+    titleController = TextEditingController(text: c?.title ?? '');
+    creditsController = TextEditingController(text: c?.credits.toString() ?? '');
+    status = statuses.contains(c?.status) ? c!.status : 'planned';
+  }
 
   @override
   void dispose() {
@@ -37,6 +51,7 @@ class _CourseFormPageState extends State<CourseFormPage> {
     setState(() => isSaving = true);
 
     final course = Course(
+      id: widget.course?.id,
       code: codeController.text.trim(),
       title: titleController.text.trim(),
       credits: int.parse(creditsController.text.trim()),
@@ -44,10 +59,19 @@ class _CourseFormPageState extends State<CourseFormPage> {
     );
 
     try {
-      await context.read<CourseProvider>().createCourse(course);
+      final provider = context.read<CourseProvider>();
+      if (isEdit) {
+        await provider.updateCourse(widget.course!.id!, course);
+      } else {
+        await provider.createCourse(course);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Course berhasil ditambahkan')),
+        SnackBar(
+          content: Text(
+            isEdit ? 'Course berhasil diperbarui' : 'Course berhasil ditambahkan',
+          ),
+        ),
       );
       Navigator.pop(context);
     } catch (e) {
@@ -63,7 +87,7 @@ class _CourseFormPageState extends State<CourseFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tambah Course')),
+      appBar: AppBar(title: Text(isEdit ? 'Edit Course' : 'Tambah Course')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -76,15 +100,22 @@ class _CourseFormPageState extends State<CourseFormPage> {
               TextFormField(
                 controller: codeController,
                 enabled: !isSaving,
-                decoration: const InputDecoration(labelText: 'Kode (contoh: MOB06)'),
+                readOnly: isEdit,
+                decoration: InputDecoration(
+                  labelText: 'Kode (contoh: MOB06)',
+                  helperText: isEdit ? 'Kode tidak dapat diubah' : null,
+                  filled: isEdit,
+                ),
                 validator: (value) {
                   final code = value?.trim() ?? '';
                   if (code.isEmpty) return 'Kode wajib diisi';
-                  final exists = context
-                      .read<CourseProvider>()
-                      .courses
-                      .any((c) => c.code.toLowerCase() == code.toLowerCase());
-                  if (exists) return 'Kode sudah dipakai';
+                  if (!isEdit) {
+                    final exists = context
+                        .read<CourseProvider>()
+                        .courses
+                        .any((c) => c.code.toLowerCase() == code.toLowerCase());
+                    if (exists) return 'Kode sudah dipakai';
+                  }
                   return null;
                 },
               ),
