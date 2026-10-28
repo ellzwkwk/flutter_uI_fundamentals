@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/course.dart';
 import '../repositories/course_repository.dart';
+import '../utils/error_message.dart';
 
 class CourseProvider extends ChangeNotifier {
   final CourseRepository repository;
@@ -19,25 +20,39 @@ class CourseProvider extends ChangeNotifier {
     try {
       courses = await repository.getCourses();
     } catch (e) {
-      error = e.toString().replaceFirst('Exception: ', '');
+      error = friendlyError(e);
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
 
+  // Exception diteruskan ke form/detail dengan pesan yang sudah ramah,
+  // sehingga SnackBar tidak menampilkan teks teknis.
   Future<void> createCourse(Course course) async {
-    await repository.createCourse(course);
+    try {
+      await repository.createCourse(course);
+    } catch (e) {
+      throw Exception(friendlyError(e));
+    }
     await loadCourses();
   }
 
   Future<void> updateCourse(int id, Course course) async {
-    await repository.updateCourse(id, course);
+    try {
+      await repository.updateCourse(id, course);
+    } catch (e) {
+      throw Exception(friendlyError(e));
+    }
     await loadCourses();
   }
 
   Future<void> deleteCourse(int id) async {
-    await repository.deleteCourse(id);
+    try {
+      await repository.deleteCourse(id);
+    } catch (e) {
+      throw Exception(friendlyError(e));
+    }
     await loadCourses();
   }
 }
