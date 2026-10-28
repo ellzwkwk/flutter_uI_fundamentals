@@ -25,4 +25,11 @@ class CourseProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Jika POST gagal, exception diteruskan ke pemanggil (form)
+  // agar form bisa menampilkan SnackBar error.
+  Future<void> createCourse(Course course) async {
+    await repository.createCourse(course);
+    await loadCourses(); // ganti isi list dari server, bukan menambah manual
+  }
 }

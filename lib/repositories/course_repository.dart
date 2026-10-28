@@ -6,7 +6,7 @@ class CourseRepository {
 
   CourseRepository(this.service);
 
-  Future<List<Course>> getCourses() {
-    return service.getCourses();
-  }
+  Future<List<Course>> getCourses() => service.getCourses();
+
+  Future<Course> createCourse(Course course) => service.createCourse(course);
 }

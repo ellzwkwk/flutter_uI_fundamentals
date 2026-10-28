@@ -7,6 +7,7 @@ import '../providers/course_state.dart';
 import '../widgets/course_tile.dart';
 import '../widgets/error_view.dart';
 import 'course_detail_page.dart';
+import 'course_form_page.dart';
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
@@ -75,6 +76,16 @@ class CoursesPage extends StatelessWidget {
         ],
       ),
       body: _buildBody(context, courseProvider),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Tambah course',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CourseFormPage()),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
